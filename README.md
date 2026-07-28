@@ -1,5 +1,7 @@
 # EasyTier STUN
 
+[简体中文](README.zh-CN.md)
+
 An independently deployable STUN server built with the same core stack used by
 EasyTier: Rust, Tokio, `stun_codec`, `bytecodec`, Clap, and Tracing.
 
