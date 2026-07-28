@@ -197,7 +197,7 @@ pub struct BindingRequest {
 
 pub fn decode_binding_request(bytes: &[u8]) -> bytecodec::Result<Option<BindingRequest>> {
     let mut decoder = MessageDecoder::<Attribute>::new();
-    let Some(message) = decoder.decode_from_bytes(bytes)? else {
+    let Ok(message) = decoder.decode_from_bytes(bytes)? else {
         return Ok(None);
     };
     if message.class() != MessageClass::Request || message.method() != BINDING {
@@ -287,13 +287,13 @@ mod tests {
             .unwrap()
             .expect("complete response");
         assert_eq!(response.class(), MessageClass::SuccessResponse);
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::XorMappedAddress(value) if value.address() == peer)
         ));
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::OtherAddress(value) if value.address() == other)
         ));
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::ChangedAddress(value) if value.address() == other)
         ));
     }
