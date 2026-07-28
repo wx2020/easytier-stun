@@ -67,12 +67,6 @@ jobs:
           - os: windows-latest
             platform: windows-x86_64
             binary: target/release/easytier-stun.exe
-          - os: macos-15-intel
-            platform: macos-x86_64
-            binary: target/release/easytier-stun
-          - os: macos-14
-            platform: macos-aarch64
-            binary: target/release/easytier-stun
     runs-on: ${{ matrix.os }}
 
     steps:
