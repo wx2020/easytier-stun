@@ -59,7 +59,7 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          package="easytier-stun-${{ matrix.platform }}"
+          package="easytier-stun-${GITHUB_REF_NAME}-${{ matrix.platform }}"
           mkdir -p "dist/${package}"
           cp "${{ matrix.binary }}" README.md LICENSE config.example.toml "dist/${package}/"
           tar -C dist -czf "dist/${package}.tar.gz" "${package}"
@@ -69,7 +69,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $package = "easytier-stun-${{ matrix.platform }}"
+          $package = "easytier-stun-$($env:GITHUB_REF_NAME)-${{ matrix.platform }}"
           New-Item -ItemType Directory -Path "dist/$package" -Force | Out-Null
           Copy-Item "${{ matrix.binary }}", "README.md", "LICENSE", "config.example.toml" -Destination "dist/$package"
           Compress-Archive -Path "dist/$package/*" -DestinationPath "dist/$package.zip"
