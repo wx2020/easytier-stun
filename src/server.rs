@@ -65,15 +65,7 @@ impl Server {
             let software = self.config.server.software.clone();
             let max_packet_size = self.config.server.max_packet_size;
             tasks.spawn(async move {
-                udp_loop(
-                    socket,
-                    slot,
-                    endpoints,
-                    stats,
-                    software,
-                    max_packet_size,
-                )
-                .await
+                udp_loop(socket, slot, endpoints, stats, software, max_packet_size).await
             });
         }
 
@@ -85,9 +77,7 @@ impl Server {
             let stats = stats.clone();
             let software = self.config.server.software.clone();
             let max_packet_size = self.config.server.max_packet_size;
-            tasks.spawn(async move {
-                tcp_loop(listener, stats, software, max_packet_size).await
-            });
+            tasks.spawn(async move { tcp_loop(listener, stats, software, max_packet_size).await });
         }
 
         if self.config.server.stats_interval_seconds > 0 {
@@ -140,10 +130,7 @@ async fn bind_udp_endpoints(config: &Config) -> Result<Vec<BoundEndpoint>> {
     Ok(endpoints)
 }
 
-async fn bind_udp_endpoint(
-    slot: EndpointSlot,
-    config: &EndpointConfig,
-) -> Result<BoundEndpoint> {
+async fn bind_udp_endpoint(slot: EndpointSlot, config: &EndpointConfig) -> Result<BoundEndpoint> {
     let socket = UdpSocket::bind(config.bind)
         .await
         .with_context(|| format!("failed to bind UDP endpoint {}", config.bind))?;
@@ -257,10 +244,7 @@ async fn udp_loop(
     }
 }
 
-fn endpoint_for_slot(
-    endpoints: &[BoundEndpoint],
-    slot: EndpointSlot,
-) -> Option<&BoundEndpoint> {
+fn endpoint_for_slot(endpoints: &[BoundEndpoint], slot: EndpointSlot) -> Option<&BoundEndpoint> {
     endpoints.iter().find(|endpoint| endpoint.slot == slot)
 }
 

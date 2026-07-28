@@ -197,7 +197,7 @@ pub struct BindingRequest {
 
 pub fn decode_binding_request(bytes: &[u8]) -> bytecodec::Result<Option<BindingRequest>> {
     let mut decoder = MessageDecoder::<Attribute>::new();
-    let Some(message) = decoder.decode_from_bytes(bytes)? else {
+    let Ok(message) = decoder.decode_from_bytes(bytes)? else {
         return Ok(None);
     };
     if message.class() != MessageClass::Request || message.method() != BINDING {
@@ -259,15 +259,10 @@ mod tests {
 
     #[test]
     fn decodes_easytier_change_request() {
-        let mut message = Message::<Attribute>::new(
-            MessageClass::Request,
-            BINDING,
-            easytier_transaction_id(42),
-        );
+        let mut message =
+            Message::<Attribute>::new(MessageClass::Request, BINDING, easytier_transaction_id(42));
         message.add_attribute(Attribute::ChangeRequest(ChangeRequest::new(true, true)));
-        let bytes = MessageEncoder::new()
-            .encode_into_bytes(message)
-            .unwrap();
+        let bytes = MessageEncoder::new().encode_into_bytes(message).unwrap();
         let request = decode_binding_request(bytes.as_slice()).unwrap().unwrap();
         assert!(request.change_ip);
         assert!(request.change_port);
@@ -292,13 +287,13 @@ mod tests {
             .unwrap()
             .expect("complete response");
         assert_eq!(response.class(), MessageClass::SuccessResponse);
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::XorMappedAddress(value) if value.address() == peer)
         ));
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::OtherAddress(value) if value.address() == other)
         ));
-        assert!(response.attributes().iter().any(
+        assert!(response.attributes().any(
             |attr| matches!(attr, Attribute::ChangedAddress(value) if value.address() == other)
         ));
     }
