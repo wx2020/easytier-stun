@@ -69,8 +69,8 @@ impl Config {
         if !(20..=u16::MAX as usize + 20).contains(&self.server.max_packet_size) {
             bail!("server.max_packet_size must be between 20 and 65555");
         }
-        if self.udp.alternate_ip.is_some() != self.udp.alternate_ip_port.is_some() {
-            bail!("udp.alternate_ip and udp.alternate_ip_port must be configured together");
+        if self.udp.alternate_ip.is_some() && self.udp.alternate_ip_port.is_none() {
+            bail!("udp.alternate_ip requires udp.alternate_ip_port");
         }
 
         let endpoints = [
@@ -93,7 +93,11 @@ impl Config {
     }
 
     pub fn has_alternate_ip(&self) -> bool {
-        self.udp.alternate_ip.is_some()
+        self.udp.alternate_ip.is_some() || self.udp.alternate_ip_port.is_some()
+    }
+
+    pub fn has_complete_endpoint_matrix(&self) -> bool {
+        self.udp.alternate_ip.is_some() && self.udp.alternate_ip_port.is_some()
     }
 }
 
@@ -117,5 +121,26 @@ mod tests {
         )
         .unwrap();
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn accepts_easytier_three_endpoint_mode() {
+        let config: Config = toml::from_str(
+            r#"
+            [udp.primary]
+            bind = "127.0.0.1:3478"
+
+            [udp.alternate_port]
+            bind = "127.0.0.1:3479"
+
+            [udp.alternate_ip_port]
+            bind = "127.0.0.2:3479"
+            "#,
+        )
+        .unwrap();
+
+        assert!(config.validate().is_ok());
+        assert!(config.has_alternate_ip());
+        assert!(!config.has_complete_endpoint_matrix());
     }
 }
