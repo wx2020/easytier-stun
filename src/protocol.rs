@@ -259,15 +259,10 @@ mod tests {
 
     #[test]
     fn decodes_easytier_change_request() {
-        let mut message = Message::<Attribute>::new(
-            MessageClass::Request,
-            BINDING,
-            easytier_transaction_id(42),
-        );
+        let mut message =
+            Message::<Attribute>::new(MessageClass::Request, BINDING, easytier_transaction_id(42));
         message.add_attribute(Attribute::ChangeRequest(ChangeRequest::new(true, true)));
-        let bytes = MessageEncoder::new()
-            .encode_into_bytes(message)
-            .unwrap();
+        let bytes = MessageEncoder::new().encode_into_bytes(message).unwrap();
         let request = decode_binding_request(bytes.as_slice()).unwrap().unwrap();
         assert!(request.change_ip);
         assert!(request.change_port);
