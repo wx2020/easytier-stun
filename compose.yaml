@@ -1,0 +1,8 @@
+services:
+  stun:
+    build: .
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config.toml:/etc/easytier-stun/config.toml:ro
+    command: ["--config", "/etc/easytier-stun/config.toml"]

@@ -1,0 +1,28 @@
+# Single-public-IP mode. Open UDP 3478/3479 and TCP 3478.
+# Set advertise when bind is private, wildcard, or behind one-to-one NAT.
+
+[udp.primary]
+bind = "0.0.0.0:3478"
+# advertise = "203.0.113.10:3478"
+
+[udp.alternate_port]
+bind = "0.0.0.0:3479"
+# advertise = "203.0.113.10:3479"
+
+# Full EasyTier NAT classification requires a second public IP:
+#
+# [udp.alternate_ip]
+# bind = "192.0.2.11:3478"
+# advertise = "203.0.113.11:3478"
+#
+# [udp.alternate_ip_port]
+# bind = "192.0.2.11:3479"
+# advertise = "203.0.113.11:3479"
+
+[tcp]
+bind = ["0.0.0.0:3478"]
+
+[server]
+software = "easytier-stun"
+max_packet_size = 2048
+stats_interval_seconds = 60
