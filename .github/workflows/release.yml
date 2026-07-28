@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
 
 permissions:
   contents: read
@@ -13,49 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Cache Rust build
-        uses: Swatinem/rust-cache@v2
-
-      - name: Check release tag
-        shell: bash
-        run: |
-          crate_version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)"
-          test "v${crate_version}" = "${GITHUB_REF_NAME}" || {
-            echo "::error::Tag ${GITHUB_REF_NAME} does not match Cargo.toml version ${crate_version}"
-            exit 1
-          }
-          git merge-base --is-ancestor "${GITHUB_SHA}" origin/main || {
-            echo "::error::Release tag must point to a commit on main"
-            exit 1
-          }
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Run tests
-        run: cargo test --all-targets --all-features
-
   build:
     name: Build ${{ matrix.platform }}
-    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -82,6 +41,19 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          crate_version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)"
+          test "v${crate_version}" = "${GITHUB_REF_NAME}" || {
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match Cargo.toml version ${crate_version}"
+            exit 1
+          }
+          git merge-base --is-ancestor "${GITHUB_SHA}" origin/main || {
+            echo "::error::Release tag must point to a commit on main"
+            exit 1
+          }
 
       - name: Package Unix archive
         if: runner.os != 'Windows'
@@ -112,8 +84,7 @@ jobs:
 
   docker:
     name: Build and publish Docker image
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -157,8 +128,8 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [test, build, docker]
-    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.test.result == 'success' && needs.build.result == 'success' && needs.docker.result == 'success'
+    needs: [build, docker]
+    if: needs.build.result == 'success' && needs.docker.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
