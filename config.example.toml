@@ -9,15 +9,19 @@ bind = "0.0.0.0:3478"
 bind = "0.0.0.0:3479"
 # advertise = "203.0.113.10:3479"
 
-# Full EasyTier NAT classification requires a second public IP:
-#
-# [udp.alternate_ip]
-# bind = "192.0.2.11:3478"
-# advertise = "203.0.113.11:3478"
+# EasyTier's current NAT detector needs this third endpoint on a second public
+# IP for its change-IP-and-port request:
 #
 # [udp.alternate_ip_port]
 # bind = "192.0.2.11:3479"
 # advertise = "203.0.113.11:3479"
+#
+# Optional fourth endpoint for the complete RFC endpoint matrix and
+# change-IP-only requests:
+#
+# [udp.alternate_ip]
+# bind = "192.0.2.11:3478"
+# advertise = "203.0.113.11:3478"
 
 [tcp]
 bind = ["0.0.0.0:3478"]

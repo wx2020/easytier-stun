@@ -9,7 +9,7 @@ It implements the behavior consumed by `wx2020/easytier`:
 - RFC 5780 `CHANGE-REQUEST`, `RESPONSE-ORIGIN`, and `OTHER-ADDRESS`
 - EasyTier-compatible `CHANGED-ADDRESS`
 - IPv4 and IPv6 socket addresses
-- two-port single-IP mode and full two-IP/four-endpoint mode
+- two-port single-IP mode, EasyTier three-endpoint mode, and full four-endpoint mode
 
 This is STUN, not TURN. It discovers NAT mappings and helps EasyTier classify
 NAT behavior; it does not relay EasyTier traffic.
@@ -19,7 +19,7 @@ NAT behavior; it does not relay EasyTier traffic.
 - Rust stable with Rust 2024 support
 - UDP 3478 and 3479 exposed
 - optional TCP 3478 for TCP mapping detection
-- two public IP addresses for complete change-IP NAT classification
+- two public IP addresses for EasyTier change-IP NAT classification
 
 With one public IP, Binding and change-port requests work, but EasyTier cannot
 distinguish every cone NAT type.
@@ -54,16 +54,16 @@ For a private build, place these in its UDP STUN server list or publish them in
 the TXT record consumed by that build. Configure the TCP STUN list with
 `stun.example.com:3478` when TCP mapping detection is required.
 
-Accurate production NAT classification uses four UDP endpoints:
+Current EasyTier NAT classification needs three UDP endpoints:
 
 ```text
 IP A, port 3478  primary
 IP A, port 3479  alternate_port
-IP B, port 3478  alternate_ip
 IP B, port 3479  alternate_ip_port
 ```
 
-All four addresses must reach the same server instance.
+Add `IP B:3478` as `alternate_ip` for the complete four-endpoint RFC matrix.
+All configured addresses must reach the same server instance.
 
 ## Docker
 

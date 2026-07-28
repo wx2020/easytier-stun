@@ -93,6 +93,10 @@ impl Server {
             warn!(
                 "single-IP mode: address discovery and change-port work, but EasyTier change-IP NAT classification requires two public IP addresses"
             );
+        } else if !self.config.has_complete_endpoint_matrix() {
+            info!(
+                "EasyTier three-endpoint mode: current EasyTier NAT classification is supported; change-IP-only requests fall back to the receiving endpoint"
+            );
         }
 
         tokio::select! {
@@ -176,10 +180,8 @@ async fn udp_loop(
             }
         };
 
-        let requested_slot = EndpointSlot {
-            ip: current_slot.ip ^ usize::from(request.change_ip),
-            port: current_slot.port ^ usize::from(request.change_port),
-        };
+        let requested_slot =
+            requested_response_slot(current_slot, request.change_ip, request.change_port);
         let response_endpoint = endpoint_for_slot(&endpoints, requested_slot)
             .or_else(|| {
                 endpoint_for_slot(
@@ -191,10 +193,12 @@ async fn udp_loop(
                 )
             })
             .unwrap_or_else(|| endpoint_for_slot(&endpoints, current_slot).unwrap());
+        let has_second_ip = endpoint_for_slot(&endpoints, EndpointSlot::ALTERNATE_IP).is_some()
+            || endpoint_for_slot(&endpoints, EndpointSlot::ALTERNATE_IP_PORT).is_some();
         let other_endpoint = endpoint_for_slot(
             &endpoints,
             EndpointSlot {
-                ip: current_slot.ip ^ usize::from(endpoints.len() == 4),
+                ip: current_slot.ip ^ usize::from(has_second_ip),
                 port: current_slot.port ^ 1,
             },
         )
@@ -246,6 +250,17 @@ async fn udp_loop(
 
 fn endpoint_for_slot(endpoints: &[BoundEndpoint], slot: EndpointSlot) -> Option<&BoundEndpoint> {
     endpoints.iter().find(|endpoint| endpoint.slot == slot)
+}
+
+fn requested_response_slot(
+    current_slot: EndpointSlot,
+    change_ip: bool,
+    change_port: bool,
+) -> EndpointSlot {
+    EndpointSlot {
+        ip: current_slot.ip ^ usize::from(change_ip),
+        port: current_slot.port ^ usize::from(change_port),
+    }
 }
 
 async fn tcp_loop(
@@ -349,4 +364,25 @@ async fn shutdown_signal() -> Result<()> {
     #[cfg(not(unix))]
     tokio::signal::ctrl_c().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn easytier_change_ip_and_port_selects_third_endpoint() {
+        assert_eq!(
+            requested_response_slot(EndpointSlot::PRIMARY, true, true),
+            EndpointSlot::ALTERNATE_IP_PORT
+        );
+    }
+
+    #[test]
+    fn easytier_change_port_selects_second_endpoint() {
+        assert_eq!(
+            requested_response_slot(EndpointSlot::PRIMARY, false, true),
+            EndpointSlot::ALTERNATE_PORT
+        );
+    }
 }
